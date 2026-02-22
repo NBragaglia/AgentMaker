@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "__AGENT_NAME__"
+version = "0.1.0"
+description = "Starter Python CLI agent"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "AgentMaker" }]
+dependencies = []
+
+[project.scripts]
+__AGENT_NAME__ = "__AGENT_PACKAGE__.cli:run"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
