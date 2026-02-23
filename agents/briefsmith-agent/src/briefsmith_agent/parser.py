@@ -8,6 +8,18 @@ from .models import Brief, Mode
 
 PLACEHOLDER = "No clear input provided."
 _BULLET_PREFIX_RE = re.compile(r"^\s*(?:[-*]\s+|\d+[.)]\s+)")
+_TIMESTAMP_TOKEN_RE = re.compile(
+    r"^\s*\[?\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM|am|pm)?\]?\s*(?:-\s*)?"
+)
+_METADATA_LINE_RE = re.compile(
+    r"^\s*(?:meeting (?:started|ended)|recording (?:started|stopped)|"
+    r"joined the meeting|left the meeting|transcript(?:ion)?|attendees?:)",
+    re.IGNORECASE,
+)
+_FILLER_WORD_RE = re.compile(r"\b(?:um+|uh+|like|you know|sort of|kind of)\b", re.IGNORECASE)
+_SPEAKER_LABEL_RE = re.compile(r"^(?:speaker \d+|host|moderator|me)$", re.IGNORECASE)
+_SPEAKER_NAME_RE = re.compile(r"^[A-Z][a-z]+(?: [A-Z][a-z]+){0,2}$")
+_SECTION_PREFIX_WORDS = {"background", "context", "risk", "finding", "open", "next", "situation"}
 
 _SITUATION_KEYWORDS = {
     "context",
@@ -114,12 +126,10 @@ def _normalize_lines(raw_text: str) -> list[str]:
     """Normalize text to meaningful non-empty lines."""
     normalized: list[str] = []
     for raw_line in raw_text.splitlines():
-        stripped = raw_line.strip()
-        if not stripped:
+        cleaned = _clean_transcript_line(raw_line)
+        if not cleaned:
             continue
-        cleaned = _BULLET_PREFIX_RE.sub("", stripped).strip()
-        if cleaned:
-            normalized.append(cleaned)
+        normalized.append(cleaned)
     return normalized
 
 
@@ -149,3 +159,38 @@ def _ensure_placeholders(buckets: dict[str, list[str]]) -> None:
     for items in buckets.values():
         if not items:
             items.append(PLACEHOLDER)
+
+
+def _clean_transcript_line(raw_line: str) -> str:
+    """Clean common transcript noise while preserving meaningful note content."""
+    stripped = raw_line.strip()
+    if not stripped or _METADATA_LINE_RE.search(stripped):
+        return ""
+
+    cleaned = _BULLET_PREFIX_RE.sub("", stripped).strip()
+    while True:
+        updated = _TIMESTAMP_TOKEN_RE.sub("", cleaned).strip()
+        if updated == cleaned:
+            break
+        cleaned = updated
+    cleaned = _strip_speaker_prefix(cleaned)
+    cleaned = _FILLER_WORD_RE.sub(" ", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip(" -|:")
+    return cleaned
+
+
+def _strip_speaker_prefix(line: str) -> str:
+    """Strip transcript speaker prefixes while preserving real note headings."""
+    if ":" not in line:
+        return line
+    prefix, remainder = line.split(":", 1)
+    normalized = prefix.strip()
+    if not normalized:
+        return line
+
+    head_word = normalized.split()[0].lower()
+    if head_word in _SECTION_PREFIX_WORDS:
+        return line
+    if _SPEAKER_LABEL_RE.match(normalized) or _SPEAKER_NAME_RE.match(normalized):
+        return remainder.strip()
+    return line

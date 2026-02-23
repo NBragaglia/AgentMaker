@@ -7,10 +7,11 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
-from .errors import BriefsmithAgentError, FileReadError, InputValidationError
+from .errors import BriefsmithAgentError, InputValidationError
 from .formatter import format_markdown
 from .models import Mode
 from .parser import parse_notes
+from .reader import read_input_text
 from .writer import save_markdown
 
 
@@ -22,12 +23,13 @@ def build_parser() -> argparse.ArgumentParser:
         epilog=(
             "Examples:\n"
             "  briefsmith-agent notes.txt --mode internal\n"
+            "  briefsmith-agent meeting_transcript.docx --mode client\n"
             "  briefsmith-agent .\\data\\deal_notes.txt --mode investment\n"
             "  briefsmith-agent client_call.txt --mode client --output-dir outputs"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("input_path", type=Path, help="Path to input .txt notes file")
+    parser.add_argument("input_path", type=Path, help="Path to input .txt or .docx notes file")
     parser.add_argument(
         "--mode",
         required=True,
@@ -49,20 +51,8 @@ def validate_input_file(path: Path) -> None:
         raise InputValidationError(f"Input file not found: {path}")
     if path.is_dir():
         raise InputValidationError(f"Expected a file path, got directory: {path}")
-    if path.suffix.lower() != ".txt":
-        raise InputValidationError(f"Expected a .txt file, got: {path}")
-
-
-def read_input_text(path: Path) -> str:
-    """Read and validate file content."""
-    try:
-        content = path.read_text(encoding="utf-8")
-    except OSError as exc:
-        raise FileReadError(f"Failed to read input file: {path}") from exc
-
-    if not content.strip():
-        raise InputValidationError(f"Input file is empty: {path}")
-    return content
+    if path.suffix.lower() not in {".txt", ".docx"}:
+        raise InputValidationError(f"Expected a .txt or .docx file, got: {path}")
 
 
 def main(argv: Sequence[str] | None = None) -> int:

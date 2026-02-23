@@ -45,3 +45,28 @@ def test_parser_handles_windows_newlines_and_question_only_lines() -> None:
     brief = parse_notes(raw, Mode.INTERNAL)
 
     assert brief.open_questions == ["Why is EBITDA down?", "What changed in pricing?"]
+
+
+def test_parser_cleans_transcript_timestamps_and_speakers() -> None:
+    raw = """
+    [10:02 AM] Alex: Background: diligence kickoff and scope alignment
+    10:05 - 10:06 Speaker 2: Finding: churn is concentrated in SMB
+    10:07 AM Moderator: Risk: implementation timeline is compressed
+    """
+    brief = parse_notes(raw, Mode.INTERNAL)
+
+    assert "Background: diligence kickoff and scope alignment" in brief.situation
+    assert "Finding: churn is concentrated in SMB" in brief.key_findings
+    assert "Risk: implementation timeline is compressed" in brief.risks
+
+
+def test_parser_drops_transcript_metadata_lines() -> None:
+    raw = """
+    Meeting started
+    Recording started
+    Attendees: Alex, Sam
+    """
+    brief = parse_notes(raw, Mode.CLIENT)
+
+    assert brief.situation[0] == PLACEHOLDER
+    assert brief.key_findings[0] == PLACEHOLDER
