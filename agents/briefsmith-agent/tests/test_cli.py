@@ -60,6 +60,59 @@ def test_cli_accepts_docx_input(tmp_path: Path, capsys) -> None:
     assert len(files) == 1
 
 
+def test_cli_batch_mode_processes_directory(tmp_path: Path, capsys) -> None:
+    batch_dir = tmp_path / "batch"
+    batch_dir.mkdir()
+    (batch_dir / "a.txt").write_text("Risk: timeline slip", encoding="utf-8")
+    (batch_dir / "b.txt").write_text("Finding: margin improved", encoding="utf-8")
+    output_dir = tmp_path / "outputs"
+
+    exit_code = main(["--batch-dir", str(batch_dir), "--mode", "client", "--output-dir", str(output_dir)])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert "Batch complete: 2 briefs generated." in captured.out
+    assert len(list(output_dir.glob("brief_client_*.md"))) == 2
+
+
+def test_cli_email_ready_flag_includes_email_section(tmp_path: Path, capsys) -> None:
+    input_path = tmp_path / "notes.txt"
+    input_path.write_text("Finding: margin improved\nRisk: timeline slip\n", encoding="utf-8")
+    output_dir = tmp_path / "outputs"
+
+    exit_code = main(
+        [str(input_path), "--mode", "client", "--output-dir", str(output_dir), "--email-ready"]
+    )
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "Brief generated:" in captured.out
+    output_file = list(output_dir.glob("brief_client_*.md"))[0]
+    content = output_file.read_text(encoding="utf-8")
+    assert "## Team Update Email Draft" in content
+
+
+def test_cli_validates_mutually_exclusive_input_and_batch(tmp_path: Path, capsys) -> None:
+    input_path = tmp_path / "notes.txt"
+    input_path.write_text("Finding: margin improved", encoding="utf-8")
+    batch_dir = tmp_path / "batch"
+    batch_dir.mkdir()
+
+    exit_code = main([str(input_path), "--batch-dir", str(batch_dir), "--mode", "internal"])
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert "either input_path or --batch-dir, not both" in captured.err.lower()
+
+
+def test_cli_rejects_invalid_max_values(tmp_path: Path, capsys) -> None:
+    input_path = tmp_path / "notes.txt"
+    input_path.write_text("Finding: margin improved", encoding="utf-8")
+
+    exit_code = main([str(input_path), "--mode", "internal", "--max-bullets", "0"])
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert "--max-bullets must be >= 1" in captured.err
+
+
 def test_cli_rejects_missing_file(tmp_path: Path, capsys) -> None:
     missing = tmp_path / "missing.txt"
     exit_code = main([str(missing), "--mode", "client"])

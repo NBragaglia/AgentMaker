@@ -96,7 +96,7 @@ _SECTION_LIMITS = {
 }
 
 
-def parse_notes(raw_text: str, mode: Mode) -> Brief:
+def parse_notes(raw_text: str, mode: Mode, max_bullets: int | None = None) -> Brief:
     """Parse unstructured notes into a concise structured brief object."""
     lines = _normalize_lines(raw_text)
 
@@ -119,7 +119,7 @@ def parse_notes(raw_text: str, mode: Mode) -> Brief:
     if unclassified:
         buckets["key_findings"].extend(unclassified)
 
-    _condense_buckets(buckets, mode)
+    _condense_buckets(buckets, mode, max_bullets)
 
     _ensure_placeholders(buckets)
 
@@ -129,6 +129,7 @@ def parse_notes(raw_text: str, mode: Mode) -> Brief:
         risks=buckets["risks"],
         open_questions=buckets["open_questions"],
         next_steps=buckets["next_steps"],
+        source_lines=lines,
     )
 
 
@@ -171,7 +172,7 @@ def _ensure_placeholders(buckets: dict[str, list[str]]) -> None:
             items.append(PLACEHOLDER)
 
 
-def _condense_buckets(buckets: dict[str, list[str]], mode: Mode) -> None:
+def _condense_buckets(buckets: dict[str, list[str]], mode: Mode, max_bullets: int | None) -> None:
     """Deduplicate and keep only the most salient bullets per section."""
     limits = _SECTION_LIMITS[mode]
     for section, items in buckets.items():
@@ -179,7 +180,8 @@ def _condense_buckets(buckets: dict[str, list[str]], mode: Mode) -> None:
             continue
         deduped = _dedupe_lines(items)
         ranked = sorted(deduped, key=lambda line: _salience_score(line, section), reverse=True)
-        concise = [_to_sendable_bullet(line) for line in ranked[: limits[section]]]
+        section_limit = max_bullets if max_bullets is not None else limits[section]
+        concise = [_to_sendable_bullet(line) for line in ranked[:section_limit]]
         buckets[section] = concise
 
 

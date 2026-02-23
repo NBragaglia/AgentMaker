@@ -13,7 +13,7 @@ def save_markdown(markdown: str, mode: Mode, output_dir: Path) -> Path:
     """Write markdown file using timestamped naming and return output path."""
     try:
         output_dir.mkdir(parents=True, exist_ok=True)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         output_path = output_dir / f"brief_{mode.value}_{timestamp}.md"
         output_path.write_text(markdown, encoding="utf-8")
     except OSError as exc:

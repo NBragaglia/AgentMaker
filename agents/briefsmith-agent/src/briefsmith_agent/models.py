@@ -23,3 +23,4 @@ class Brief:
     risks: list[str]
     open_questions: list[str]
     next_steps: list[str]
+    source_lines: list[str]

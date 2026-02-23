@@ -17,6 +17,10 @@
 - Rule-based parsing with lightweight heuristics
 - Auto-cleaning for transcript noise (timestamps, speaker labels, meeting metadata)
 - Concise synthesis with section limits and a dedicated `Key Takeaways (KTAs)` section
+- Configurable output length with `--max-bullets` and `--max-ktas`
+- Optional `--email-ready` team update draft section
+- Batch mode for processing all `.txt` / `.docx` files in a folder via `--batch-dir`
+- KTA citation snippets that link takeaways back to source lines
 - Unit tests with `pytest`
 
 ## Setup
@@ -36,6 +40,8 @@ briefsmith-agent notes.txt --mode internal
 briefsmith-agent meeting_transcript.docx --mode client
 briefsmith-agent .\data\deal_notes.txt --mode investment
 briefsmith-agent client_call.txt --mode client --output-dir outputs
+briefsmith-agent notes.txt --mode client --max-bullets 3 --max-ktas 3 --email-ready
+briefsmith-agent --batch-dir .\meeting_notes --mode investment --output-dir outputs
 ```
 
 ## Test

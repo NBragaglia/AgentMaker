@@ -11,6 +11,7 @@ def _sample_brief() -> Brief:
         risks=["Key risk"],
         open_questions=["Open item?"],
         next_steps=["Do next thing"],
+        source_lines=["Finding one from source transcript", "Key risk from source transcript"],
     )
 
 
@@ -35,3 +36,17 @@ def test_formatter_includes_mode_specific_framing() -> None:
     assert "Internal operational brief" in internal_md
     assert "Client-ready brief" in client_md
     assert "Investment diligence brief" in invest_md
+
+
+def test_formatter_can_include_email_draft() -> None:
+    markdown = format_markdown(_sample_brief(), Mode.CLIENT, Path("notes.txt"), email_ready=True)
+
+    assert "## Team Update Email Draft" in markdown
+    assert "Subject: Client Update - Key Findings and Next Steps" in markdown
+
+
+def test_formatter_includes_kta_source_snippets() -> None:
+    markdown = format_markdown(_sample_brief(), Mode.CLIENT, Path("notes.txt"))
+
+    assert "## KTA Source Snippets" in markdown
+    assert "KTA 1:" in markdown

@@ -77,3 +77,17 @@ def test_parser_limits_section_size_for_large_inputs() -> None:
     brief = parse_notes(raw, Mode.CLIENT)
 
     assert len(brief.key_findings) <= 4
+
+
+def test_parser_respects_explicit_max_bullets_override() -> None:
+    raw = "\n".join([f"Finding: datapoint {idx} improved by 5%" for idx in range(20)])
+    brief = parse_notes(raw, Mode.INVESTMENT, max_bullets=2)
+
+    assert len(brief.key_findings) <= 2
+
+
+def test_parser_tracks_source_lines() -> None:
+    raw = "Background: kickoff\nFinding: margin improved\n"
+    brief = parse_notes(raw, Mode.INTERNAL)
+
+    assert "Background: kickoff" in brief.source_lines
