@@ -16,6 +16,7 @@
 - Timestamped markdown output in `outputs/`
 - Rule-based parsing with lightweight heuristics
 - Auto-cleaning for transcript noise (timestamps, speaker labels, meeting metadata)
+- Concise synthesis with section limits and a dedicated `Key Takeaways (KTAs)` section
 - Unit tests with `pytest`
 
 ## Setup

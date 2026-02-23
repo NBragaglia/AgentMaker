@@ -12,9 +12,9 @@ def test_parser_classifies_keywords_into_sections() -> None:
     """
     brief = parse_notes(raw, Mode.INTERNAL)
 
-    assert any("Background" in item for item in brief.situation)
-    assert any("finding" in item.lower() for item in brief.key_findings)
-    assert any("Risk" in item for item in brief.risks)
+    assert any("diligence kickoff" in item.lower() for item in brief.situation)
+    assert any("margin expanded" in item.lower() for item in brief.key_findings)
+    assert any("customer concentration" in item.lower() for item in brief.risks)
     assert any("?" in item for item in brief.open_questions)
     assert any("owner" in item.lower() for item in brief.next_steps)
 
@@ -26,14 +26,14 @@ def test_parser_uses_fallback_for_unclassified_lines() -> None:
     """
     brief = parse_notes(raw, Mode.CLIENT)
 
-    assert "Alpha datapoint from interview" in brief.key_findings
-    assert "Beta datapoint from workshop" in brief.situation
+    assert any("alpha datapoint from interview" in item.lower() for item in brief.key_findings)
+    assert brief.situation[0] == PLACEHOLDER
 
 
 def test_parser_inserts_placeholders_for_missing_sections() -> None:
     brief = parse_notes("Single unclassified note", Mode.INVESTMENT)
 
-    assert brief.key_findings[0] == "Single unclassified note"
+    assert brief.key_findings[0] == "Single unclassified note."
     assert brief.situation[0] == PLACEHOLDER
     assert brief.risks[0] == PLACEHOLDER
     assert brief.open_questions[0] == PLACEHOLDER
@@ -55,9 +55,9 @@ def test_parser_cleans_transcript_timestamps_and_speakers() -> None:
     """
     brief = parse_notes(raw, Mode.INTERNAL)
 
-    assert "Background: diligence kickoff and scope alignment" in brief.situation
-    assert "Finding: churn is concentrated in SMB" in brief.key_findings
-    assert "Risk: implementation timeline is compressed" in brief.risks
+    assert "Diligence kickoff and scope alignment." in brief.situation
+    assert "Churn is concentrated in SMB." in brief.key_findings
+    assert "Implementation timeline is compressed." in brief.risks
 
 
 def test_parser_drops_transcript_metadata_lines() -> None:
@@ -70,3 +70,10 @@ def test_parser_drops_transcript_metadata_lines() -> None:
 
     assert brief.situation[0] == PLACEHOLDER
     assert brief.key_findings[0] == PLACEHOLDER
+
+
+def test_parser_limits_section_size_for_large_inputs() -> None:
+    raw = "\n".join([f"Finding: datapoint {idx} improved by 5%" for idx in range(20)])
+    brief = parse_notes(raw, Mode.CLIENT)
+
+    assert len(brief.key_findings) <= 4

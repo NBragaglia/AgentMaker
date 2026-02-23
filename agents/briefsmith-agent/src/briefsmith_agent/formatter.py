@@ -28,6 +28,7 @@ def format_markdown(brief: Brief, mode: Mode, source_path: Path) -> str:
         "",
     ]
 
+    _append_section(lines, "Key Takeaways (KTAs)", _build_ktas(brief))
     _append_section(lines, "Situation", brief.situation)
     _append_section(lines, "Key Findings", brief.key_findings)
     _append_section(lines, "Risks", brief.risks)
@@ -43,3 +44,17 @@ def _append_section(lines: list[str], title: str, items: list[str]) -> None:
     for item in items:
         lines.append(f"- {item}")
     lines.append("")
+
+
+def _build_ktas(brief: Brief) -> list[str]:
+    """Build concise top-level takeaways from findings and risks."""
+    kta_candidates = brief.key_findings[:3] + brief.risks[:2]
+    unique: list[str] = []
+    seen: set[str] = set()
+    for line in kta_candidates:
+        normalized = line.lower().strip()
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        unique.append(line)
+    return unique[:4] if unique else ["No clear input provided."]

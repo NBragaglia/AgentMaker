@@ -17,13 +17,14 @@ def _sample_brief() -> Brief:
 def test_formatter_includes_sections_in_required_order() -> None:
     markdown = format_markdown(_sample_brief(), Mode.CLIENT, Path("notes.txt"))
 
+    kta_idx = markdown.index("## Key Takeaways (KTAs)")
     situation_idx = markdown.index("## Situation")
     findings_idx = markdown.index("## Key Findings")
     risks_idx = markdown.index("## Risks")
     questions_idx = markdown.index("## Open Questions")
     next_steps_idx = markdown.index("## Next Steps")
 
-    assert situation_idx < findings_idx < risks_idx < questions_idx < next_steps_idx
+    assert kta_idx < situation_idx < findings_idx < risks_idx < questions_idx < next_steps_idx
 
 
 def test_formatter_includes_mode_specific_framing() -> None:
